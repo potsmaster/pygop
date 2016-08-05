@@ -23,6 +23,7 @@ GOPReturnCodes = {  '200': 'Command Succesful',
 class pygop(object):
     def __init__(self):
 
+        self.debug = False
         self.gatewayIP = self.__discoverGateway()
         if not self.gatewayIP:
             sys.exit("Couldn't detect gateway on the network.")
@@ -73,6 +74,36 @@ class pygop(object):
 
                 print ""
 
+    def printHouseInfoTable(self):
+        'Gets data for all rooms and prints it to the screen'
+        try:
+            from tabulate import tabulate
+        except:
+            return self.printHouseInfo()
+
+        self.carousel = self.__scanRooms(invalidate=True)
+        if not self.carousel:
+            print "Couldn't enumerate rooms or devices"
+            return False
+
+        tbl = [['Room','Rid','Type','Name','Did','State','Level','Offline']]
+        for room in self.carousel["rooms"]:
+            for device in room["devices"]:
+                if device["type"] == "LED":
+                    type = 'LED Bulb'
+                elif device["type"] == "CFL":
+                    type = 'CFL Bulb'
+                elif device["type"] == "Light Fixture":
+                    type = 'Fixture'
+                else:
+                    type = 'Unknown'
+
+                onoff = 'On' if device['state']=="1" else 'Off'
+                offl = 'Y' if device['offline'] else 'N'
+                tbl.append([room['name'],room['rid'],type,device['name'],device['did'],onoff,device['level'],offl])
+
+        print tabulate(tbl, tablefmt='simple', headers='firstrow')
+
     # Set Level APIs
 
     def setBulbLevelByDid(self, did, onoff, level=0):
@@ -80,11 +111,11 @@ class pygop(object):
         'Sets the bulb on/off or dim level. [did, (1 - on, 0 off), dim level (1-100)]\n' \
         'Note: To set the bulb on or off, the level parameter must be 0.'
         command = 'DeviceSendCommand'
-
+	print "setBulbLevelByDid(%s,%s,%s)" % (did, onoff, level)
         if (level == 0):
-            data = '<gip><version>1</version><token>%s</token><did>%d</did><value>%d</value></gip>' % (self.token, did, onoff)
+            data = '<gip><version>1</version><token>%s</token><did>%s</did><value>%s</value></gip>' % (self.token, did, onoff)
         else:
-            data = '<gip><version>1</version><token>%s</token><did>%d</did><type>level</type><value>%d</value></gip>' % (self.token, did, level)
+            data = '<gip><version>1</version><token>%s</token><did>%s</did><type>level</type><value>%s</value></gip>' % (self.token, did, level)
 
         result = self.__sendGopCommand(command, data)
 
@@ -266,6 +297,9 @@ class pygop(object):
                     current_room = { "name" :  roomname, "rid" : roomid, "devices" : [] }
 
                     for device in room.findall('device'):
+                        if self.debug:
+                            from xml.dom import minidom
+                            print minidom.parseString(ET.tostring(device, 'utf-8')).toprettyxml(indent="\t")
                         deviceid = device.find('did').text
                         devicename = device.find('name').text
                         devicetype = device.find('prodtype').text
