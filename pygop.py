@@ -220,6 +220,30 @@ class pygop(object):
 
         return True
 
+    def getDeviceNames(self):
+        'Returns bulb names for all rooms'
+        self.carousel = self.__scanRooms(invalidate=True)
+        if not self.carousel:
+            print "Couldn't enumerate rooms or devices"
+            return
+
+        for room in self.carousel["rooms"]:
+            print 'Room: %s (rid %s)' % (room["name"], room["rid"])
+
+            for device in room["devices"]:
+                if device["type"] == "LED":
+                    print "   Type: LED Bulb"
+                elif device["type"] == "CFL":
+                    print "   Type: CFL Bulb"
+                elif device["type"] == "Light Fixture":
+                    print "   Type: Light Fixture"
+                else:
+                    print "   Type: Unknown"
+
+                yield device["name"]
+
+
+
     # private helper functions
 
     def __identify(self, action, identifier):

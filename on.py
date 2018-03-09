@@ -8,4 +8,5 @@ pygop.printHouseInfoTable()
 #pygop.setBulbLevelByName('Desk Light', 1, 100)
 
 pygop.setRoomLevelByName('Living Room', 1, 0)
-pygop.setRoomLevelByName('Bedroom',1,60)
+pygop.setRoomLevelByName('Bedroom',0, 1)
+pygop.setRoomLevelByName('Hall',0, 1)
